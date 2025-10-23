@@ -1,73 +1,76 @@
-'use client'
+"use client";
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Pencil, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Todo, NewTodoInput, TodoFilter } from '../types/todo';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import Link from "next/link";
+import { Pencil, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Todo, NewTodoInput, TodoFilter } from "../types/todo";
 
 const fetchTodos = async (): Promise<Todo[]> => {
-  const res = await fetch('https://jsonplaceholder.typicode.com/todos');
-  if (!res.ok) throw new Error('Failed to fetch todos');
+  const res = await fetch("https://jsonplaceholder.typicode.com/todos");
+  if (!res.ok) throw new Error("Failed to fetch todos");
   return res.json();
 };
 
 const postTodo = async (newTodo: NewTodoInput): Promise<Todo> => {
-  const res = await fetch('https://jsonplaceholder.typicode.com/todos', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+  const res = await fetch("https://jsonplaceholder.typicode.com/todos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(newTodo),
   });
-  if (!res.ok) throw new Error('Failed to add todo');
+  if (!res.ok) throw new Error("Failed to add todo");
   return res.json();
 };
 
 const updateTodo = async (todo: Todo): Promise<Todo> => {
   if (todo.id > 200) return todo;
-  const res = await fetch(`https://jsonplaceholder.typicode.com/todos/${todo.id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(todo),
-  });
-  if (!res.ok) throw new Error('Failed to update todo');
+  const res = await fetch(
+    `https://jsonplaceholder.typicode.com/todos/${todo.id}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(todo),
+    }
+  );
+  if (!res.ok) throw new Error("Failed to update todo");
   return res.json();
 };
 
 const deleteTodo = async (id: number): Promise<number> => {
   if (id > 200) return id;
   const res = await fetch(`https://jsonplaceholder.typicode.com/todos/${id}`, {
-    method: 'DELETE',
+    method: "DELETE",
   });
-  if (!res.ok) throw new Error('Failed to delete todo');
+  if (!res.ok) throw new Error("Failed to delete todo");
   return id;
 };
 
 function Home() {
   const queryClient = useQueryClient();
-  const [newTodo, setNewTodo] = useState<string>('');
-  const [search, setSearch] = useState<string>('');
-  const [filter, setFilter] = useState<TodoFilter>('all');
+  const [newTodo, setNewTodo] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
+  const [filter, setFilter] = useState<TodoFilter>("all");
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editId, setEditId] = useState<number | null>(null);
-  const [editTitle, setEditTitle] = useState<string>('');
-  
+  const [editTitle, setEditTitle] = useState<string>("");
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(10);
 
   const { data, isLoading, isError, error } = useQuery<Todo[], Error>({
-    queryKey: ['todos'],
+    queryKey: ["todos"],
     queryFn: fetchTodos,
   });
 
   const addMutation = useMutation({
     mutationFn: postTodo,
     onSuccess: (newTodoItem: Todo) => {
-      queryClient.setQueryData<Todo[]>(['todos'], (old = []) => [
+      queryClient.setQueryData<Todo[]>(["todos"], (old = []) => [
         { ...newTodoItem, id: Date.now() },
         ...old,
       ]);
-      setNewTodo('');
+      setNewTodo("");
       setIsModalOpen(false);
       setCurrentPage(1);
     },
@@ -76,18 +79,18 @@ function Home() {
   const editMutation = useMutation({
     mutationFn: updateTodo,
     onSuccess: (updatedTodo: Todo) => {
-      queryClient.setQueryData<Todo[]>(['todos'], (old = []) =>
+      queryClient.setQueryData<Todo[]>(["todos"], (old = []) =>
         old.map((todo) => (todo.id === updatedTodo.id ? updatedTodo : todo))
       );
       setEditId(null);
-      setEditTitle('');
+      setEditTitle("");
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: deleteTodo,
     onSuccess: (deletedId: number) => {
-      queryClient.setQueryData<Todo[]>(['todos'], (old = []) => {
+      queryClient.setQueryData<Todo[]>(["todos"], (old = []) => {
         const newTodos = old.filter((todo) => todo.id !== deletedId);
         const totalPages = Math.ceil(newTodos.length / itemsPerPage);
         if (currentPage > totalPages && totalPages > 0) {
@@ -113,11 +116,11 @@ function Home() {
 
   const handleCancelEdit = (): void => {
     setEditId(null);
-    setEditTitle('');
+    setEditTitle("");
   };
 
   const handleDeleteTodo = (id: number): void => {
-    if (window.confirm('Are you sure you want to delete this todo?')) {
+    if (window.confirm("Are you sure you want to delete this todo?")) {
       deleteMutation.mutate(id);
     }
   };
@@ -130,9 +133,9 @@ function Home() {
   const filteredTodos = (data || []).filter(
     (todo) =>
       todo.title.toLowerCase().includes(search.toLowerCase()) &&
-      (filter === 'all' || 
-       (filter === 'completed' && todo.completed) || 
-       (filter === 'incomplete' && !todo.completed))
+      (filter === "all" ||
+        (filter === "completed" && todo.completed) ||
+        (filter === "incomplete" && !todo.completed))
   );
 
   // Pagination calculations
@@ -152,7 +155,9 @@ function Home() {
     setCurrentPage(1);
   };
 
-  const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>): void => {
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>
+  ): void => {
     setItemsPerPage(Number(e.target.value));
     setCurrentPage(1);
   };
@@ -164,30 +169,33 @@ function Home() {
   const getPageNumbers = (): (number | string)[] => {
     const pages: (number | string)[] = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
       }
     } else {
-      const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+      const startPage = Math.max(
+        1,
+        currentPage - Math.floor(maxVisiblePages / 2)
+      );
       const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-      
+
       if (startPage > 1) {
         pages.push(1);
-        if (startPage > 2) pages.push('...');
+        if (startPage > 2) pages.push("...");
       }
-      
+
       for (let i = startPage; i <= endPage; i++) {
         pages.push(i);
       }
-      
+
       if (endPage < totalPages) {
-        if (endPage < totalPages - 1) pages.push('...');
+        if (endPage < totalPages - 1) pages.push("...");
         pages.push(totalPages);
       }
     }
-    
+
     return pages;
   };
 
@@ -205,12 +213,12 @@ function Home() {
           onChange={handleSearchChange}
         />
         <div className="flex gap-2">
-          {(['all', 'completed', 'incomplete'] as TodoFilter[]).map((type) => (
+          {(["all", "completed", "incomplete"] as TodoFilter[]).map((type) => (
             <button
               key={type}
               onClick={() => handleFilterChange(type)}
               className={`px-3 py-1 border rounded capitalize ${
-                filter === type ? 'bg-black text-white' : 'bg-white text-black'
+                filter === type ? "bg-black text-white" : "bg-white text-black"
               }`}
             >
               {type}
@@ -236,10 +244,11 @@ function Home() {
             <option value={50}>50</option>
           </select>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600">
-            Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} todos
+            Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of{" "}
+            {totalItems} todos
           </span>
           <button
             onClick={() => setIsModalOpen(true)}
@@ -262,8 +271,12 @@ function Home() {
                 placeholder="Enter todo title"
                 className="w-full border px-3 py-2 rounded"
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    addMutation.mutate({ title: newTodo, completed: false, userId: 1 });
+                  if (e.key === "Enter") {
+                    addMutation.mutate({
+                      title: newTodo,
+                      completed: false,
+                      userId: 1,
+                    });
                   }
                 }}
                 autoFocus
@@ -276,11 +289,17 @@ function Home() {
                   Cancel
                 </button>
                 <button
-                  onClick={() => addMutation.mutate({ title: newTodo, completed: false, userId: 1 })}
+                  onClick={() =>
+                    addMutation.mutate({
+                      title: newTodo,
+                      completed: false,
+                      userId: 1,
+                    })
+                  }
                   disabled={addMutation.isPending}
                   className="px-4 py-2 bg-black text-white rounded hover:bg-gray-800 disabled:opacity-50"
                 >
-                  {addMutation.isPending ? 'Saving...' : 'Save'}
+                  {addMutation.isPending ? "Saving..." : "Save"}
                 </button>
               </div>
             </div>
@@ -290,13 +309,19 @@ function Home() {
 
       {totalItems === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          No todos found. {search || filter !== 'all' ? 'Try adjusting your search or filter.' : 'Add your first todo!'}
+          No todos found.{" "}
+          {search || filter !== "all"
+            ? "Try adjusting your search or filter."
+            : "Add your first todo!"}
         </div>
       ) : (
         <>
           <ul className="space-y-2">
             {currentTodos.map((todo) => (
-              <li key={todo.id} className="flex items-center justify-between p-3 border rounded hover:bg-gray-50">
+              <li
+                key={todo.id}
+                className="flex items-center justify-between p-3 border rounded hover:bg-gray-50"
+              >
                 <div className="flex items-center gap-3 flex-1">
                   <input
                     type="checkbox"
@@ -312,8 +337,8 @@ function Home() {
                         onChange={(e) => setEditTitle(e.target.value)}
                         className="flex-1 border px-2 py-1 rounded"
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleUpdateTodo();
-                          if (e.key === 'Escape') handleCancelEdit();
+                          if (e.key === "Enter") handleUpdateTodo();
+                          if (e.key === "Escape") handleCancelEdit();
                         }}
                         autoFocus
                       />
@@ -322,7 +347,7 @@ function Home() {
                         disabled={editMutation.isPending}
                         className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 disabled:opacity-50"
                       >
-                        {editMutation.isPending ? 'Saving...' : 'Save'}
+                        {editMutation.isPending ? "Saving..." : "Save"}
                       </button>
                       <button
                         onClick={handleCancelEdit}
@@ -333,9 +358,9 @@ function Home() {
                     </div>
                   ) : (
                     <Link
-                      to={`/todos/${todo.id}`}
+                      href={`/todos/${todo.id}`}
                       className={`text-blue-600 hover:underline flex-1 ${
-                        todo.completed ? 'line-through text-gray-500' : ''
+                        todo.completed ? "line-through text-gray-500" : ""
                       }`}
                     >
                       {todo.title}
@@ -344,10 +369,14 @@ function Home() {
                 </div>
                 {editId !== todo.id && (
                   <div className="flex items-center gap-2">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      todo.completed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {todo.completed ? 'Completed' : 'Incomplete'}
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        todo.completed
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {todo.completed ? "Completed" : "Incomplete"}
                     </span>
                     <button
                       onClick={() => handleEditTodo(todo)}
@@ -375,7 +404,7 @@ function Home() {
               <div className="text-sm text-gray-600">
                 Page {currentPage} of {totalPages}
               </div>
-              
+
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => goToPage(currentPage - 1)}
@@ -385,24 +414,24 @@ function Home() {
                 >
                   <ChevronLeft size={16} />
                 </button>
-                
+
                 {getPageNumbers().map((page, index) => (
                   <button
                     key={index}
-                    onClick={() => typeof page === 'number' && goToPage(page)}
-                    disabled={page === '...'}
+                    onClick={() => typeof page === "number" && goToPage(page)}
+                    disabled={page === "..."}
                     className={`px-3 py-2 border rounded text-sm ${
                       page === currentPage
-                        ? 'bg-black text-white'
-                        : page === '...'
-                        ? 'cursor-default'
-                        : 'hover:bg-gray-50'
+                        ? "bg-black text-white"
+                        : page === "..."
+                        ? "cursor-default"
+                        : "hover:bg-gray-50"
                     }`}
                   >
                     {page}
                   </button>
                 ))}
-                
+
                 <button
                   onClick={() => goToPage(currentPage + 1)}
                   disabled={currentPage === totalPages}

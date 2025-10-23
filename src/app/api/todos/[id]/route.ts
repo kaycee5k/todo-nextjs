@@ -1,31 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const res = await fetch(`https://jsonplaceholder.typicode.com/todos/${params.id}`)
-    const todo = await res.json()
-    return NextResponse.json(todo)
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch todo' }, { status: 500 })
-  }
-}
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const supabase = createRouteHandlerClient({ cookies })
+    
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json()
-    const res = await fetch(`https://jsonplaceholder.typicode.com/todos/${params.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-    const todo = await res.json()
-    return NextResponse.json(todo)
+    
+    const { data, error } = await supabase
+      .from('todos')
+      .update(body)
+      .eq('id', params.id)
+      .eq('user_id', session.user.id)
+      .select()
+      .single()
+
+    if (error) throw error
+    return NextResponse.json(data)
   } catch (error) {
     return NextResponse.json({ error: 'Failed to update todo' }, { status: 500 })
   }
@@ -36,9 +36,20 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await fetch(`https://jsonplaceholder.typicode.com/todos/${params.id}`, {
-      method: 'DELETE',
-    })
+    const supabase = createRouteHandlerClient({ cookies })
+    
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { error } = await supabase
+      .from('todos')
+      .delete()
+      .eq('id', params.id)
+      .eq('user_id', session.user.id)
+
+    if (error) throw error
     return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: 'Failed to delete todo' }, { status: 500 })

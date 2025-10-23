@@ -1,48 +1,15 @@
-// File: src/types/todo.ts
-
 export interface Todo {
-  id: number;
-  title: string;
-  completed: boolean;
-  userId: number;
+  id: string  // Changed from number to string (UUID)
+  title: string
+  completed: boolean
+  user_id: string
+  created_at: string
+  updated_at: string
 }
 
 export interface NewTodoInput {
-  title: string;
-  completed: boolean;
-  userId: number;
+  title: string
+  completed: boolean
 }
 
-export type TodoFilter = 'all' | 'completed' | 'incomplete';
-
-// File: src/types/api.ts
-
-export interface ApiError {
-  message: string;
-  status?: number;
-}
-
-// File: src/types/components.ts
-
-export interface PaginationState {
-  currentPage: number;
-  itemsPerPage: number;
-  totalItems: number;
-  totalPages: number;
-}
-
-export interface DialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title?: string;
-  children: React.ReactNode;
-}
-
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'danger';
-  isLoading?: boolean;
-}
-
-export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  error?: string;
-}
+export type TodoFilter = 'all' | 'completed' | 'incomplete'
